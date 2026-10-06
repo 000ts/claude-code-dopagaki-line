@@ -15,7 +15,9 @@ color thresholds, path depth) can be tuned via a config file at
 ~/.claude/statusline_config.json. Run `python3 ~/.claude/setup_statusline.py`
 to configure it interactively, or edit the JSON by hand.
 """
+import colorsys
 import json
+import os
 import subprocess
 import sys
 import time
@@ -73,8 +75,33 @@ def load_config() -> dict:
     return config
 
 
+NO_COLOR = bool(os.environ.get("NO_COLOR"))
+TRUECOLOR = os.environ.get("COLORTERM", "").lower() in ("truecolor", "24bit")
+
+# Hue (degrees) the rainbow starts at; moving it with the clock makes the
+# colors drift from one statusline refresh to the next.
+HUE_BASE = (time.time() * 40) % 360
+HUE_STEP = 25  # per character / bar cell
+
+
 def color(code: str, text: str) -> str:
+    if NO_COLOR:
+        return text
     return f"\033[{code}m{text}{RESET}"
+
+
+def hue_code(hue: float) -> str:
+    r, g, b = (round(c * 255) for c in colorsys.hsv_to_rgb((hue % 360) / 360, 0.75, 1.0))
+    if TRUECOLOR:
+        return f"38;2;{r};{g};{b}"
+    r6, g6, b6 = (round(c / 255 * 5) for c in (r, g, b))
+    return f"38;5;{16 + 36 * r6 + 6 * g6 + b6}"
+
+
+def rainbow(text: str, offset: float) -> str:
+    return "".join(
+        color(hue_code(HUE_BASE + offset + i * HUE_STEP), ch) for i, ch in enumerate(text)
+    )
 
 
 def threshold_color(pct: float, config: dict) -> str:
@@ -85,7 +112,7 @@ def threshold_color(pct: float, config: dict) -> str:
     return "31"
 
 
-def make_bar(pct: float, config: dict) -> str:
+def make_bar(pct: float, config: dict, hue_offset: float = 0) -> str:
     """Sub-character precision bar: the boundary cell is filled with an
     eighth-block character, so the bar's length tracks the real
     percentage instead of rounding to whole cells. The unused portion is
@@ -101,7 +128,10 @@ def make_bar(pct: float, config: dict) -> str:
         filled += EIGHTHS[remainder]
         full_cells += 1
     track = EMPTY_TRACK * (width - full_cells)
-    filled_colored = color(threshold_color(pct, config), filled)
+    code = threshold_color(pct, config)
+    # Below warn the fill is a rainbow; at warn/danger it stays one yellow/red
+    # so the warning is not lost in the decoration.
+    filled_colored = rainbow(filled, hue_offset) if code == "32" else color(code, filled)
     track_colored = color("90", track)
     return f"{BAR_OPEN}{filled_colored}{track_colored}{BAR_CLOSE}"
 
@@ -202,7 +232,7 @@ def get_git_info(cwd: str, config: dict) -> str:
             except ValueError:
                 pass
 
-    parts = [color("35", branch_name), marker]
+    parts = [rainbow(branch_name, 60), marker]
     if ahead_behind:
         parts.append(ahead_behind)
     return "".join(parts)
@@ -242,7 +272,7 @@ def get_context_info(data: dict, config: dict) -> str:
         return ""
     used = (cw.get("total_input_tokens") or 0) + (cw.get("total_output_tokens") or 0)
     size = cw.get("context_window_size") or 200_000
-    return f"ctx{make_bar(pct, config)}{pct:.0f}% {format_k(used)}/{format_k(size)}"
+    return f"ctx{make_bar(pct, config, 120)}{pct:.0f}% {format_k(used)}/{format_k(size)}"
 
 
 def get_rate_limit_segments(data: dict, config: dict) -> list:
@@ -250,13 +280,13 @@ def get_rate_limit_segments(data: dict, config: dict) -> list:
         return []
     rate = data.get("rate_limits", {})
     segments = []
-    for key, label in (("five_hour", "5h"), ("seven_day", "wk")):
+    for key, label, hue_offset in (("five_hour", "5h", 180), ("seven_day", "wk", 240)):
         window = rate.get(key)
         if not window or window.get("used_percentage") is None:
             continue
         pct = window["used_percentage"]
         countdown = format_countdown(window.get("resets_at"))
-        text = f"{label}{make_bar(pct, config)}{pct:.0f}%"
+        text = f"{label}{make_bar(pct, config, hue_offset)}{pct:.0f}%"
         if countdown:
             text += color("90", f"→{countdown}")
         segments.append(text)
@@ -273,7 +303,9 @@ def get_cache_info(data: dict, config: dict) -> str:
     if hit_ratio is None:
         return ""
     pct = hit_ratio * 100
-    return color(threshold_color(100 - pct, config), f"cache {pct:.0f}%")
+    code = threshold_color(100 - pct, config)
+    text = f"cache {pct:.0f}%"
+    return rainbow(text, 300) if code == "32" else color(code, text)
 
 
 def model_price_key(model_id: str) -> str:
@@ -311,18 +343,18 @@ def get_today_total(config: dict) -> str:
     ttl = config["today_cache_ttl"]
     try:
         cached = json.loads(TODAY_CACHE_FILE.read_text())
-        if cached.get("date") == today and now - cached.get("ts", 0) < ttl:
-            return cached.get("text", "")
+        if cached.get("date") == today and now - cached.get("ts", 0) < ttl and "plain" in cached:
+            return color("90", cached["plain"]) if cached["plain"] else ""
     except Exception:
         pass
 
     result = _compute_today_total(today)
 
     try:
-        TODAY_CACHE_FILE.write_text(json.dumps({"ts": now, "date": today, "text": result}))
+        TODAY_CACHE_FILE.write_text(json.dumps({"ts": now, "date": today, "plain": result}))
     except Exception:
         pass
-    return result
+    return color("90", result) if result else ""
 
 
 def _compute_today_total(today: str) -> str:
@@ -371,14 +403,14 @@ def _compute_today_total(today: str) -> str:
         return ""
     if total_cost <= 0:
         return ""
-    return color("90", f"today ~${total_cost:.2f} ({len(session_ids)} sessions)")
+    return f"today ~${total_cost:.2f} ({len(session_ids)} sessions)"
 
 
 def main() -> None:
     config = load_config()
     data = read_input()
 
-    model_name = color("36", get_model_name(data))
+    model_name = rainbow(get_model_name(data), 0)
     cwd_raw = get_cwd_raw(data)
     cwd_short = get_cwd_short(cwd_raw, config["cwd_max_parts"])
     git_info = get_git_info(cwd_raw, config)

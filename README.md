@@ -16,6 +16,8 @@ cache 91%  $0.42 3m5s  today ~$5.02 (2 sessions)
 
 Every section, bar width, path depth, and color threshold is configurable — see [Configuration](#configuration).
 
+The model name, branch name, bar fills, and cache rate are always drawn in a rainbow whose colors drift on every refresh. The text itself is unchanged; only the colors move. Once a bar reaches `warn_threshold` or `danger_threshold` (or the cache rate gets worse), it turns plain yellow or red exactly as before, so warnings are never hidden by the decoration. Set `NO_COLOR` to print text only; terminals without `COLORTERM=truecolor`/`24bit` get the nearest 256-color shades.
+
 ## Requirements
 
 - Claude Code v2.1.251+ (for `rate_limits` and `prompt_cache` fields; earlier versions still work, those sections just stay hidden)
