@@ -1,4 +1,4 @@
-# claude-code-statusline
+# claude-code-dopagaki-line
 
 English | [日本語](README.ja.md)
 
@@ -27,7 +27,7 @@ The model name, branch name, bar fills, and cache rate are always drawn in a rai
 ## Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/tlarnc1-sl/claude-code-statusline/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/000ts/claude-code-dopagaki-line/main/install.sh | bash
 ```
 
 This downloads `statusline.py` and `setup_statusline.py` into `~/.claude`, points `~/.claude/settings.json`'s `statusLine` at the script, adds a `ccstatus` shell alias (zsh/bash) for the settings wizard, and runs that wizard once so you can pick your options right away.
@@ -45,8 +45,8 @@ That's just a shortcut for `python3 ~/.claude/setup_statusline.py`, which you ca
 Prefer to do it yourself, or the one-liner isn't your style:
 
 ```bash
-curl -o ~/.claude/statusline.py https://raw.githubusercontent.com/tlarnc1-sl/claude-code-statusline/main/statusline.py
-curl -o ~/.claude/setup_statusline.py https://raw.githubusercontent.com/tlarnc1-sl/claude-code-statusline/main/setup_statusline.py
+curl -o ~/.claude/statusline.py https://raw.githubusercontent.com/000ts/claude-code-dopagaki-line/main/statusline.py
+curl -o ~/.claude/setup_statusline.py https://raw.githubusercontent.com/000ts/claude-code-dopagaki-line/main/setup_statusline.py
 chmod +x ~/.claude/statusline.py ~/.claude/setup_statusline.py
 python3 ~/.claude/setup_statusline.py
 ```

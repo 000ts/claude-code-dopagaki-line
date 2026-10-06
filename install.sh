@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Installs claude-code-statusline: downloads the scripts into ~/.claude,
+# Installs claude-code-dopagaki-line: downloads the scripts into ~/.claude,
 # wires up ~/.claude/settings.json, adds a `ccstatus` shell alias for the
 # settings wizard, and runs that wizard once so you can pick your options.
 set -euo pipefail
 
-REPO_RAW="https://raw.githubusercontent.com/tlarnc1-sl/claude-code-statusline/main"
+REPO_RAW="https://raw.githubusercontent.com/000ts/claude-code-dopagaki-line/main"
 CLAUDE_DIR="$HOME/.claude"
 ALIAS_NAME="ccstatus"
 
@@ -27,7 +27,7 @@ if [ -n "$SHELL_RC" ]; then
   if ! grep -q "alias ${ALIAS_NAME}=" "$SHELL_RC" 2>/dev/null; then
     {
       echo ""
-      echo "# Claude Code statusline settings (added by claude-code-statusline installer)"
+      echo "# Claude Code statusline settings (added by claude-code-dopagaki-line installer)"
       echo "alias ${ALIAS_NAME}=\"python3 ${CLAUDE_DIR}/setup_statusline.py\""
     } >> "$SHELL_RC"
     echo "Added '${ALIAS_NAME}' alias to ${SHELL_RC}"

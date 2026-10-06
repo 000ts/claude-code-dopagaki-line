@@ -1,4 +1,4 @@
-# claude-code-statusline
+# claude-code-dopagaki-line
 
 [English](README.md) | 日本語
 
@@ -27,7 +27,7 @@ cache 91%  $0.42 3m5s  today ~$5.02 (2 sessions)
 ## インストール
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/tlarnc1-sl/claude-code-statusline/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/000ts/claude-code-dopagaki-line/main/install.sh | bash
 ```
 
 これだけで、`statusline.py` と `setup_statusline.py` を `~/.claude` にダウンロードし、`~/.claude/settings.json` の `statusLine` をこのスクリプトに向け、設定ウィザードを開くための `ccstatus` というシェルエイリアス(zsh/bash)を追加し、その場でウィザードを1回実行して初期設定まで済ませます。
@@ -45,8 +45,8 @@ ccstatus
 自分で手を動かしたい場合や、ワンライナーが好みでない場合はこちら。
 
 ```bash
-curl -o ~/.claude/statusline.py https://raw.githubusercontent.com/tlarnc1-sl/claude-code-statusline/main/statusline.py
-curl -o ~/.claude/setup_statusline.py https://raw.githubusercontent.com/tlarnc1-sl/claude-code-statusline/main/setup_statusline.py
+curl -o ~/.claude/statusline.py https://raw.githubusercontent.com/000ts/claude-code-dopagaki-line/main/statusline.py
+curl -o ~/.claude/setup_statusline.py https://raw.githubusercontent.com/000ts/claude-code-dopagaki-line/main/setup_statusline.py
 chmod +x ~/.claude/statusline.py ~/.claude/setup_statusline.py
 python3 ~/.claude/setup_statusline.py
 ```
