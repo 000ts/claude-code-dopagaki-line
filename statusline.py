@@ -136,6 +136,10 @@ def make_bar(pct: float, config: dict, hue_offset: float = 0) -> str:
     return f"{BAR_OPEN}{filled_colored}{track_colored}{BAR_CLOSE}"
 
 
+def empty_bar(config: dict) -> str:
+    return f"{BAR_OPEN}{color('90', EMPTY_TRACK * config['bar_width'])}{BAR_CLOSE}"
+
+
 def format_k(n: float) -> str:
     if n >= 1000:
         return f"{n / 1000:.0f}k"
@@ -213,7 +217,7 @@ def get_git_info(cwd: str, config: dict) -> str:
 
     status = run_git(real_cwd, "status", "--porcelain")
     dirty = bool(status and status.stdout.strip())
-    marker = color("33", "✗") if dirty else color("32", "✓")
+    marker = color("33", "✗") if dirty else rainbow("✓", 90)
 
     ahead_behind = ""
     if config["show_ahead_behind"]:
@@ -264,12 +268,11 @@ def get_context_info(data: dict, config: dict) -> str:
     """Official context-window usage (no more transcript guessing)."""
     if not config["show_context"]:
         return ""
-    cw = data.get("context_window")
-    if not cw:
-        return ""
+    cw = data.get("context_window") or {}
     pct = cw.get("used_percentage")
     if pct is None:
-        return ""
+        # Keep the slot so the segments after it do not shift when data is missing
+        return f"ctx{empty_bar(config)}{color('90', '--% --/--')}"
     used = (cw.get("total_input_tokens") or 0) + (cw.get("total_output_tokens") or 0)
     size = cw.get("context_window_size") or 200_000
     return f"ctx{make_bar(pct, config, 120)}{pct:.0f}% {format_k(used)}/{format_k(size)}"
@@ -278,11 +281,12 @@ def get_context_info(data: dict, config: dict) -> str:
 def get_rate_limit_segments(data: dict, config: dict) -> list:
     if not config["show_rate_limits"]:
         return []
-    rate = data.get("rate_limits", {})
+    rate = data.get("rate_limits") or {}
     segments = []
     for key, label, hue_offset in (("five_hour", "5h", 180), ("seven_day", "wk", 240)):
         window = rate.get(key)
         if not window or window.get("used_percentage") is None:
+            segments.append(f"{label}{empty_bar(config)}{color('90', '--%')}")
             continue
         pct = window["used_percentage"]
         countdown = format_countdown(window.get("resets_at"))
