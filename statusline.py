@@ -411,6 +411,9 @@ def _compute_today_total(today: str) -> str:
 
 
 def main() -> None:
+    # Windows pipes default to the ANSI code page (cp932 on Japanese systems), which can't encode the bar glyphs
+    sys.stdin.reconfigure(encoding="utf-8")
+    sys.stdout.reconfigure(encoding="utf-8")
     config = load_config()
     data = read_input()
 
